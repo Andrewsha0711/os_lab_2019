@@ -1,0 +1,5 @@
+#!/bin/bash
+# сверху произошел shebang
+pwd
+date
+echo $PATH
