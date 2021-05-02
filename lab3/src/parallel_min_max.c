@@ -35,26 +35,41 @@ int main(int argc, char **argv) {
 
     if (c == -1) break;
 
-    switch (c) {
+    switch (c) 
+    {
       case 0:
-        switch (option_index) {
+        switch (option_index) 
+        {
           case 0:
             seed = atoi(optarg);
             // your code here
             // error handling
+            if(seed <= 0)
+            {
+             printf("seed is a positive number\n");
+             return 1; 
+            }
             break;
           case 1:
             array_size = atoi(optarg);
             // your code here
             // error handling
+            if (array_size <= 0) {
+             printf("array_size is a positive number\n");
+             return 1;
+            }
             break;
           case 2:
             pnum = atoi(optarg);
             // your code here
             // error handling
+            if (pnum <= 0) {
+             printf("pnum is a positive number\n");
+             return 1;
+            }
             break;
           case 3:
-            with_files = true;
+            with_files = false;
             break;
 
           defalut:
@@ -91,33 +106,58 @@ int main(int argc, char **argv) {
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
 
-  for (int i = 0; i < pnum; i++) {
+
+  // создание pip'a
+  int fd[2];
+  pipe(fd);
+  // fd[0] - для выходного потока данных pip'a + только чтение
+  // fd[1] - для входного потока данных pip'a + только запись
+ 
+  for (int i = 0; i < pnum; i++) // количество разбиений
+  {
     pid_t child_pid = fork();
-    if (child_pid >= 0) {
+    if (child_pid >= 0) 
+    {
       // successful fork
       active_child_processes += 1;
-      if (child_pid == 0) {
+      if (child_pid == 0) 
+      {
         // child process
-
+        // 0 - код потомка
         // parallel somehow
+        unsigned int begin = i*(array_size/pnum);   // для каждого разбиения ищем границы рабочего отрезка
+        unsigned int end = begin + array_size/pnum;
+        struct MinMax min_max = GetMinMax(array,begin,end); // ищем minmax на этом отрезке
 
-        if (with_files) {
+        if (with_files) 
+        {
           // use files here
-        } else {
+          FILE *fin;
+          fin = fopen("data.txt", "a+");
+          fprintf(fin, "%d %d\n", min_max.min, min_max.max);
+          fclose(fin);
+        } 
+        else 
+        {
           // use pipe here
+          write(fd[1],&min_max.max,sizeof(int));
+          write(fd[1],&min_max.min,sizeof(int));
         }
         return 0;
       }
 
-    } else {
+    } 
+    else 
+    {
       printf("Fork failed!\n");
       return 1;
     }
   }
 
-  while (active_child_processes > 0) {
+  while (active_child_processes > 0) 
+  {
     // your code here
-
+    wait(NULL);
     active_child_processes -= 1;
   }
 
@@ -129,10 +169,17 @@ int main(int argc, char **argv) {
     int min = INT_MAX;
     int max = INT_MIN;
 
-    if (with_files) {
+    if (with_files) 
+    {
       // read from files
+      FILE *fin;
+      fin = fopen("data.txt", "r");
+      fscanf(fin, "%d %d", &min, &max);
+      fclose(fin);
     } else {
       // read from pipes
+      read(fd[0], &max, sizeof(int));
+      read(fd[0], &min, sizeof(int));
     }
 
     if (min < min_max.min) min_max.min = min;
