@@ -165,26 +165,22 @@ int main(int argc, char **argv) {
   min_max.min = INT_MAX;
   min_max.max = INT_MIN;
 
-  for (int i = 0; i < pnum; i++) {
-    int min = INT_MAX;
-    int max = INT_MIN;
+  int min = INT_MAX;
+  int max = INT_MIN;
 
-    if (with_files) 
-    {
-      // read from files
-      FILE *fin;
-      fin = fopen("data.txt", "r");
-      fscanf(fin, "%d %d", &min, &max);
-      fclose(fin);
-    } else {
-      // read from pipes
-      read(fd[0], &max, sizeof(int));
-      read(fd[0], &min, sizeof(int));
-    }
+    if (with_files) { // read from files
+       FILE *fin;
+       fin = fopen("data.txt", "r");
+         for (int i = 0; i < pnum; i++)  
+         fscanf(fin, "%d %d", &min, &max);
+       fclose(fin); }
+    else {
+         for (int i = 0; i < pnum; i++) { // read from pipes
+           read(fd[0], &max, sizeof(int));
+           read(fd[0], &min, sizeof(int)); }}
 
     if (min < min_max.min) min_max.min = min;
     if (max > min_max.max) min_max.max = max;
-  }
 
   struct timeval finish_time;
   gettimeofday(&finish_time, NULL);
